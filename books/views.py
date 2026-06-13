@@ -1,3 +1,19 @@
-from django.shortcuts import render
+from django.http import JsonResponse
+from .models import User
 
-# Create your views here.
+
+def get_user(request, username):
+    try:
+        user = User.objects.get(username=username)
+
+        return JsonResponse({
+            "username": user.username,
+            "email": user.email,
+            "home_address": user.home_address
+        })
+
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"error": "User not found"},
+            status=404
+        )
