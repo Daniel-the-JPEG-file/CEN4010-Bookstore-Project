@@ -8,6 +8,7 @@ from .serializers import BookSerializer, AuthorSerializer
 # each function here corresponds to a specific URL and HTTP request type
 
 # create a book
+# 201 created if functional
 @api_view(['POST']) # only accepts POST requests (sending data)
 def create_book(request): # contains the JSON data sent by the client
     serializer = BookSerializer(data = request.data) # serializes data from JSON
@@ -37,6 +38,7 @@ def create_author(request):
     return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 # Get all books by an author
+# returns a list
 @api_view(['GET']) # only accepts GET requests (retrieving data)
 def get_books_by_author(request, author_id): # searches database for author ID
     books = Book.objects.filter(author = author_id) # returns list of books from the author ID
