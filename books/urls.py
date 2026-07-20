@@ -17,4 +17,4 @@ urlpatterns = [
     path("users/<str:username>/creditcards/", create_credit_card),
 
     path("users/<str:username>/creditcards/list/", get_credit_cards),
-]g
+]
