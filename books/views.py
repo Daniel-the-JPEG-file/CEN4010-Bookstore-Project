@@ -2,11 +2,38 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from .models import Book, Author, User, CreditCard
 from .serializers import BookSerializer, AuthorSerializer, UserSerializer, CreditCardSerializer
+
 # views handle the logic for each API endpoint
 # each function here corresponds to a specific URL and HTTP request type
+
+@api_view(['GET'])
+def books_by_genre(request, genre):
+    books = Book.objects.filter(genre__iexact=genre)
+    serializer = BookSerializer(books, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def top_sellers(request):
+    # The '-' in front of 'copies_sold' sorts the list from highest to lowest
+    books = Book.objects.order_by('-copies_sold')[:10]
+    serializer = BookSerializer(books, many=True)
+    return Response(serializer.data)
+
+# GET books sorted by price (Descending - Highest to Lowest)
+@api_view(['GET'])
+def get_books_by_price_desc(request):
+    books = Book.objects.all().order_by('-price')
+    serializer = BookSerializer(books, many=True)
+    return Response(serializer.data)
+
+# GET books sorted by price (Ascending - Lowest to Highest)
+@api_view(['GET'])
+def get_books_by_price_asc(request):
+    books = Book.objects.all().order_by('price')
+    serializer = BookSerializer(books, many=True)
+    return Response(serializer.data)
 
 # create a book
 # 201 created if functional
@@ -46,9 +73,7 @@ def get_books_by_author(request, author_id): # searches database for author ID
     serializer = BookSerializer(books, many = True) # convert to JSON ; many = True means expect a list
     return Response(serializer.data)
 
-
 # Defines a GET USER endpoint.
-
 @api_view(['GET'])
 def get_user(request, username):
     try:
@@ -60,7 +85,6 @@ def get_user(request, username):
     return Response(serializer.data)
 
 #UPDATE USER PUT ENDPOINT
-
 @api_view(['PUT', 'PATCH'])
 def update_user(request, username):
     try:
@@ -81,7 +105,6 @@ def update_user(request, username):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Defines a POST user endpoint
-
 @api_view(['POST'])
 def create_user(request):
     serializer = UserSerializer(data=request.data)
@@ -96,7 +119,6 @@ def create_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Defines a GET CREDIT CARD ENDPOINT
-
 @api_view(['GET'])
 def get_credit_cards(request, username):
     try:
@@ -111,7 +133,6 @@ def get_credit_cards(request, username):
     return Response(serializer.data)
 
 #Create Credit Card POST ENDPOINT
-
 @api_view(['POST'])
 def create_credit_card(request, username):
     try:
