@@ -1,108 +1,90 @@
-import json
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import User
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from .models import User, CreditCard
+from .serializers import UserSerializer, CreditCardSerializer
 
 
+# Defines a GET USER endpoint.
+
+@api_view(['GET'])
 def get_user(request, username):
     try:
         user = User.objects.get(username=username)
-
-        return JsonResponse({
-            "username": user.username,
-            "email": user.email,
-            "home_address": user.home_address
-        })
-
     except User.DoesNotExist:
-        return JsonResponse(
-            {"error": "User not found"},
-            status=404
-        )
-def get_credit_cards(request, username):
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
+    serializer = UserSerializer(user)
+    return Response(serializer.data)
+
+#UPDATE USER PUT ENDPOINT
+
+@api_view(['PUT', 'PATCH'])
+def update_user(request, username):
     try:
-
         user = User.objects.get(username=username)
-
-        cards = user.credit_cards.all()
-
-        data = []
-
-        for card in cards:
-
-            data.append({
-                "cardholder_name": card.cardholder_name,
-                "card_last_four": card.card_number[-4:],
-                "expiration_date": card.expiration_date
-            })
-
-        return JsonResponse(data, safe=False)
-
     except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
-        return JsonResponse(
-            {"error": "User not found"},
-            status=404
-        )
+    # Email should not be updated according to the project requirements.
+    data = request.data.copy()
+    data.pop("email", None)
 
-@csrf_exempt
+    serializer = UserSerializer(user, data=data, partial=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Defines a POST user endpoint
+
+@api_view(['POST'])
 def create_user(request):
+    serializer = UserSerializer(data=request.data)
 
-    if request.method != "POST":
-        return JsonResponse(
-            {"error": "Only POST requests are allowed"},
-            status=405
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
         )
 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Defines a GET CREDIT CARD ENDPOINT
+
+@api_view(['GET'])
+def get_credit_cards(request, username):
     try:
-        data = json.loads(request.body)
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
-        required_fields = [
-            "username",
-            "password",
-            "email",
-            "home_address"
-        ]
+    cards = CreditCard.objects.filter(user=user)
 
-        for field in required_fields:
-            if field not in data:
-                return JsonResponse(
-                    {"error": f"Missing field: {field}"},
-                    status=400
-                )
+    serializer = CreditCardSerializer(cards, many=True)
 
-        if User.objects.filter(username=data["username"]).exists():
-            return JsonResponse(
-                {"error": "Username already exists"},
-                status=400
-            )
+    return Response(serializer.data)
 
-        user = User.objects.create(
-            username=data["username"],
-            password=data["password"],
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
-            email=data["email"],
-            home_address=data["home_address"]
+#Create Credit Card POST ENDPOINT
+
+@api_view(['POST'])
+def create_credit_card(request, username):
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = CreditCardSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save(user=user)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
         )
 
-        return JsonResponse(
-            {
-                "message": "User created successfully",
-                "username": user.username
-            },
-            status=201
-        )
-
-    except json.JSONDecodeError:
-        return JsonResponse(
-            {"error": "Invalid JSON"},
-            status=400
-        )
-
-    except Exception as e:
-        return JsonResponse(
-            {"error": str(e)},
-            status=500
-        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
