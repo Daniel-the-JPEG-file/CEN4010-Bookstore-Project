@@ -1,9 +1,17 @@
 from django.shortcuts import render
+from django.db.models import Avg
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Book, Author, User, CreditCard
-from .serializers import BookSerializer, AuthorSerializer, UserSerializer, CreditCardSerializer
+from .models import Book, Author, User, CreditCard, Rating, Comment
+from .serializers import (
+    BookSerializer,
+    AuthorSerializer,
+    UserSerializer,
+    CreditCardSerializer,
+    RatingSerializer,
+    CommentSerializer,
+)
 
 # views handle the logic for each API endpoint
 # each function here corresponds to a specific URL and HTTP request type
@@ -150,3 +158,67 @@ def create_credit_card(request, username):
         )
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# --- Rating & Comment Endpoints ---
+
+# Create a rating for a book (1-5 scale, datestamped)
+@api_view(['POST'])
+def create_rating(request, isbn):
+    try:
+        book = Book.objects.get(ISBN=isbn)
+    except Book.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data.copy()
+    data['book'] = book.id
+
+    serializer = RatingSerializer(data=data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Create a comment for a book (datestamped)
+@api_view(['POST'])
+def create_comment(request, isbn):
+    try:
+        book = Book.objects.get(ISBN=isbn)
+    except Book.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    data = request.data.copy()
+    data['book'] = book.id
+
+    serializer = CommentSerializer(data=data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Get all comments for a book
+@api_view(['GET'])
+def get_comments(request, isbn):
+    try:
+        book = Book.objects.get(ISBN=isbn)
+    except Book.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    comments = book.comments.all()
+    serializer = CommentSerializer(comments, many=True)
+    return Response(serializer.data)
+
+# Get the average rating for a book
+@api_view(['GET'])
+def get_average_rating(request, isbn):
+    try:
+        book = Book.objects.get(ISBN=isbn)
+    except Book.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    average = book.ratings.aggregate(Avg('score'))['score__avg']
+    average = round(average, 2) if average is not None else None
+    return Response({'average_rating': average})

@@ -42,4 +42,17 @@ urlpatterns = [
     path("users/<str:username>/update/", update_user),
     path("users/<str:username>/creditcards/", create_credit_card),
     path("users/<str:username>/creditcards/list/", get_credit_cards),
+
+    # --- Rating & Comment Endpoints ---
+    # POST /books/<isbn>/ratings/ - Create a rating for a book
+    path("books/<str:isbn>/ratings/", views.create_rating, name="create_rating"),
+
+    # GET /books/<isbn>/ratings/average/ - Get the average rating for a book
+    path("books/<str:isbn>/ratings/average/", views.get_average_rating, name="get_average_rating"),
+
+    # POST /books/<isbn>/comments/ - Create a comment for a book
+    path("books/<str:isbn>/comments/", views.create_comment, name="create_comment"),
+
+    # GET /books/<isbn>/comments/list/ - Get all comments for a book
+    path("books/<str:isbn>/comments/list/", views.get_comments, name="get_comments"),
 ]
