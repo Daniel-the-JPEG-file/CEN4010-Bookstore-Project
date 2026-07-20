@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Book, Author
+from .models import Book, Author, User, CreditCard
 # serializers convert database models to JSON format and vice versa
 
 # handles converting Author model data to and from JSON
@@ -12,7 +12,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-from .models import User, CreditCard
+        fields = '__all__'
 
 # handles converting User model data to and from JSON
 class UserSerializer(serializers.ModelSerializer):
