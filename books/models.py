@@ -23,3 +23,44 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Rating(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='ratings')
+    user = models.CharField(max_length=100, db_column='user_id')
+    score = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} rated {self.book.title}: {self.score}/5"
+
+
+class Comment(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='comments')
+    user = models.CharField(max_length=100, db_column='user_id')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} on {self.book.title}"
+
+
+class User(models.Model):
+    username = models.CharField(max_length=100, unique=True)
+    password = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(unique=True,blank=True,null=True)
+    home_address = models.CharField(max_length=255,blank=True,null=True)
+    def __str__(self):
+        return self.username
+
+
+class CreditCard(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_cards')
+    card_number = models.CharField(max_length=16)
+    expiration_date = models.CharField(max_length=5)
+    cardholder_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.cardholder_name} - {self.card_number[-4:]}"
