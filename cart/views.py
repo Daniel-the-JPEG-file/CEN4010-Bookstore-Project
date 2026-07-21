@@ -36,8 +36,11 @@ def remove_from_cart(request):
     user_id = request.data.get('user_id')
     book_id = request.data.get('book_id')
     try:
-        item = CartItem.objects.get(user_id=user_id, book_id=book_id)
-        item.delete()
-        return Response({'message': 'Book removed from cart'}, status=status.HTTP_200_OK)
-    except CartItem.DoesNotExist:
-        return Response({'error': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
+        items = CartItem.objects.filter(user_id=user_id, book_id=book_id)
+        if items.exists():
+            items.first().delete()
+            return Response({'message': 'Book removed from cart'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Item not found in cart'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
